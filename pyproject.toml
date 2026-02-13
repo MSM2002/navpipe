@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "navpipe"
-version = "0.1.0"
+version = "0.1.1"
 description = "Unofficial Python SDK for fetching mutual fund NAV history from mfapi.in"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -39,5 +39,6 @@ Repository = "https://github.com/MSM2002/navpipe"
 BugTracker = "https://github.com/MSM2002/navpipe/issues"
 
 
-[tool.setuptools]
-packages = ["navpipe"]
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["navpipe*"]

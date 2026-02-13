@@ -1,2 +1,6 @@
+# Python bytecode and egg-info
 *__pycache__/
 *egg-info/
+
+# Build artifacts
+dist/
