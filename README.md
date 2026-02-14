@@ -91,7 +91,7 @@ Returns a `polars.DataFrame` with:
 
 ---
 
-## Public API (v0.1.0)
+## Public API
 
 ### NavPipe
 
@@ -154,7 +154,7 @@ Architecture layers:
 
 ---
 
-## Current Scope (v0.1.0)
+## Current Scope
 
 - Fetch NAV history  
 - Bulk concurrent fetching  
