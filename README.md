@@ -200,15 +200,6 @@ Open an issue or submit a pull request.
 
 ---
 
-## Version
-
-0.1.0
-
-This is an early release with a minimal stable surface.  
-Breaking changes may occur before 1.0.0.
-
----
-
 ## License
 
 Apache 2.0
