@@ -13,7 +13,7 @@ and this project adheres to Semantic Versioning.
 - 
 
 ### Changed
-- 
+- Made `nav_response_to_df()` faster by removing `.select()` and not creating a `dict` object.
 
 ### Fixed
 - 
