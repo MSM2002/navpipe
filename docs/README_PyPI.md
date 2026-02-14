@@ -59,7 +59,7 @@ pip install navpipe
 ## Quick Start
 
 ```python
-from navpipe.api import NavPipe
+from navpipe import NavPipe
 
 client = NavPipe(
 max_concurrency=5,
