@@ -4,3 +4,8 @@
 
 # Build artifacts
 dist/
+target/
+Cargo.lock
+
+# Virtual environments
+.venv/
