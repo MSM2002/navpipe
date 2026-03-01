@@ -2,40 +2,17 @@
 
 # NavPipe
 
-**NavPipe** is a lightweight, typed Python SDK for fetching mutual fund NAV history from the unofficial API at:
+**NavPipe** is a high-performance, compiled Python SDK for fetching mutual fund NAV history from the unofficial API at:
 
 👉 https://www.mfapi.in
 
-It provides:
+By moving the core logic to **Rust**, NavPipe now offers massive concurrency with minimal overhead, returning results directly into **Polars** memory.
 
-- 🚀 Simple synchronous interface  
-- ⚡ Async HTTP under the hood  
-- 📊 Native `polars` DataFrame output  
-- 🧵 Built-in concurrency control  
-- ⏱ Optional rate limiting  
-- 🔁 Automatic retries with exponential backoff  
-- 🧾 Fully typed models using `msgspec`  
-
-> ⚠️ This project is **not affiliated with mfapi.in**. It is an unofficial wrapper.
-
----
-
-## Important: Scheme Codes
-
-NavPipe requires **scheme codes** to be provided manually.
-
-You can find scheme codes directly on:
-
-👉 https://www.mfapi.in
-
-Example:
-
-    https://api.mfapi.in/mf/119551
-
-Here, `119551` is the scheme code.
-
-NavPipe does not (yet) provide scheme discovery or search functionality.  
-This may be added in future versions.
+### Why the Rust rewrite?
+- 🦀 **Safety:** Memory-safe concurrent fetching using the `tokio` runtime.
+- 🚀 **Speed:** Zero-copy data transfers between Rust and Python via `pyo3-polars`.
+- 📊 **Lazy-First:** Native support for Polars `LazyFrame`, allowing you to optimize queries before they run.
+- 🧵 **True Parallelism:** Bypasses the Python Global Interpreter Lock (GIL) for network I/O and data transformation.
 
 ---
 
@@ -44,162 +21,98 @@ This may be added in future versions.
 ```bash
 pip install navpipe
 ```
-
-
----
-
-## Requirements
-
-- Python **3.9+**
-- polars
-- aiohttp
-- msgspec
-- aiolimiter
-
 ---
 
 ## Quick Start
 
 ```python
-from navpipe import NavPipe
+import navpipe
+import polars as pl
 
-client = NavPipe(
-max_concurrency=5,
-rate_limit_per_sec=3,
-)
+# Initialize the Rust-backed client
+client = navpipe.NavPipe(max_concurrency=10)
 
+# Eager execution: Returns a polars.DataFrame immediately
 df = client.nav_history(
-scheme_codes=[119551, 120503],
-start_date="2023-01-01",
-end_date="2023-12-31",
+    scheme_codes=[119551, 120503],
+    start_date="2023-01-01",
+    end_date="2023-12-31",
 )
 
-print(df)
+# Lazy execution: Returns a polars.LazyFrame for complex pipelines
+lazy_plan = client.nav_history_lazy(
+    scheme_codes=[119551, 120503]
+)
+
+# Chain Polars operations natively
+results = lazy_plan.filter(pl.col("nav") > 50).collect()
+print(results)
 ```
 
+### Output Schema
 
-### Output
+The Rust engine performs diagonal concatenation to ensure all scheme data is merged efficiently:
 
-Returns a `polars.DataFrame` with:
+|Column|Type|Description|
+|------|----|-----------|
+|scheme_code|Int64|The MFAPI unique identifier|
+|date|Date|The NAV date|
+|nav|Float64|The Net Asset Value|
 
-| column        | type     |
-|--------------|----------|
-| scheme_code  | int      |
-| scheme_name  | str      |
-| date         | pl.Date  |
-| nav          | float    |
+---
+
+## Important: Scheme Codes
+
+NavPipe requires scheme codes to be provided manually. You can find these on:
+👉 https://www.mfapi.in
+
+Example: `https://api.mfapi.in/mf/119551` → `119551` is the code.
 
 ---
 
 ## Public API
 
-### NavPipe
+`NavPipe(max_concurrency: int)`
 
-```python
-NavPipe(
-*,
-max_concurrency: int = 5,
-rate_limit_per_sec: int | None = 3,
-)
-```
+Initializes the engine.
 
-### nav_history(...)
+- `max_concurrency`: Limits the number of simultaneous HTTP requests using a `tokio::sync::Semaphore`.
 
-```python
-nav_history(
-scheme_codes: Iterable[int],
-*,
-start_date: str | None = None,
-end_date: str | None = None,
-) -> pl.DataFrame
-```
+`nav_history(...) -> pl.DataFrame`
 
+Eagerly fetches and collects data into a standard Polars DataFrame.
 
-- `scheme_codes` – Iterable of mutual fund scheme codes  
-- `start_date` / `end_date` – Optional date range (must be provided together)  
-- Returns a vertically concatenated `polars.DataFrame`
+`nav_history_lazy(...) -> pl.LazyFrame`
+
+Returns a Polars LazyFrame. Use this if you are fetching hundreds of schemes and want to apply filters, aggregations, or joins before calling `.collect()`.
 
 ---
 
 ## Design Philosophy
-
 NavPipe aims to:
 
-- Expose a clean synchronous interface
-- Use async I/O internally for performance
-- Provide strong typing
-- Return dataframe-native results
-- Stay minimal and focused
+- **Move the Heavy Lifting to Rust**: All networking and JSON-to-Arrow transformation happens in compiled code.
+- **Polars First**: Treat DataFrames as the primary citizen, avoiding the overhead of Python dictionaries or lists.
+- **Async Under the Hood**: Use the tokio multi-threaded scheduler to manage I/O without requiring the user to write async/await code in Python.
 
-Architecture layers:
+**Architecture Layers:**
 
-- Async transport (aiohttp)
-- Structured decoding (msgspec.Struct)
-- Transformation to polars
-- Sync bridge for user-friendly API
-
----
-
-## Error Handling
-
-- Retries on:
-  - 429
-  - 500
-  - 502
-  - 503
-  - 504
-- Exponential backoff with jitter
-- Raises `RuntimeError` after max retries
-- Validates date range parameters
-
----
-
-## Current Scope
-
-- Fetch NAV history  
-- Bulk concurrent fetching  
-- Rate limiting  
-- Typed decoding  
-- Polars transformation  
-
----
-
-## Roadmap / Ideas
-
-Planned or possible additions:
-
-- Scheme discovery/search API
-- Fund metadata endpoints
-- Local caching layer
-- Async-first public API
-- Pandas and other dataframe output options
-- CLI interface
-- Response validation layer
-- Custom error classes
-- Built-in scheme code registry
-
-Suggestions and ideas are welcome.
+1. **Transport**: Rust `reqwest` with `rustls` for high-performance HTTP.
+2. **Concurrency**: `tokio` semaphore-controlled task spawning.
+3. **Transformation**: Native Rust parsing into `polars-core` series.
+4. **Bridge**: `PyO3` + `pyo3-polars` for zero-overhead Python integration.
 
 ---
 
 ## Contributing
 
-Contributions are welcome.
-
-If you'd like to:
-
-- Add features  
-- Improve typing  
-- Improve performance  
-- Add caching  
-- Improve documentation  
-- Add tests  
-- Suggest API improvements  
-
-Open an issue or submit a pull request.
+We welcome contributions to the Rust core or the Python stubs! Just make sure to open an [issue](https://github.com/MSM2002/navpipe/issues) to discuss it first.
 
 ---
 
 ## License
-
 Apache 2.0
+
+⚠️ This project is not affiliated with mfapi.in. It is an unofficial wrapper designed for performance.
+
+---
