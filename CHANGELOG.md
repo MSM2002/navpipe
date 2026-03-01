@@ -10,10 +10,12 @@ and this project adheres to Semantic Versioning.
 ## [Unreleased]
 
 ### Added
-- 
+- `nav_history_lazy()` to return results into a `pl.LazyFrame`.
+- Python type stubs for the public API.
 
 ### Changed
-- 
+- Migrated all backend logic to Rust.
+- Removed rate limiting per second.
 
 ### Fixed
 - 
