@@ -1,10 +1,10 @@
-use crate::schema::nav::DateRange;
 use crate::transform::nav::nav_response_to_df;
 use crate::transport::client::AsyncNavPipeHTTP;
 use polars::prelude::*;
 use futures::future::join_all;
 use tokio::sync::Semaphore;
 use std::sync::Arc;
+use crate::schema::nav::{NavResponse, DateRange}; 
 
 /// Fetch NAV data concurrently and return a LazyFrame
 pub async fn fetch_nav_history_bulk(
@@ -23,27 +23,32 @@ pub async fn fetch_nav_history_bulk(
             let sem_clone = sem.clone();
             tokio::spawn(async move {
                 let _permit = sem_clone.acquire().await.unwrap();
-                let resp = client_clone.get_nav(code, dr_clone.as_ref()).await?;
+                let resp = client_clone.get_nav::<NavResponse>(code, dr_clone.as_ref())
+                    .await
+                    .map_err(|e: reqwest::Error| PolarsError::ComputeError(e.to_string().into()))?;
+                
                 nav_response_to_df(&resp)
             })
         })
         .collect();
 
-        let dfs: Vec<DataFrame> = join_all(tasks)
-        .await
-        .into_iter()
-        .collect::<Result<Vec<_>, _>>()?;
+    let results = join_all(tasks).await;
+    let mut dfs = Vec::with_capacity(results.len());
+    
+    for res in results {
+        let df = res.map_err(|e| PolarsError::ComputeError(e.to_string().into()))??;
+        dfs.push(df);
+    }
 
-    Ok(concat_df(&dfs)?.lazy())
+    polars::functions::concat_df_diagonal(&dfs).map(|df: polars::frame::DataFrame| df.lazy())
 }
 
-/// Eager version (for convenience)
 pub async fn fetch_nav_history_bulk_eager(
-    scheme_codes: &[u32],
-    date_range: Option<&DateRange>,
-    max_concurrency: usize,
+    scheme_codes: Vec<u32>, 
+    date_range: Option<DateRange>, 
+    max_concurrency: usize
 ) -> Result<DataFrame, PolarsError> {
-    fetch_nav_history_bulk(scheme_codes, date_range, max_concurrency)
-        .await?
-        .collect()?
+    let lf = fetch_nav_history_bulk(&scheme_codes, date_range.as_ref(), max_concurrency).await?;
+    let df = lf.collect()?;
+    Ok(df)
 }
