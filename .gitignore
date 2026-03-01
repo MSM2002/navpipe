@@ -9,3 +9,8 @@ Cargo.lock
 
 # Virtual environments
 .venv/
+
+# Python extensions
+*.so
+*.pyd
+*.pdb
