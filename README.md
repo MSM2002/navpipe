@@ -2,6 +2,16 @@
 
 # NavPipe
 
+[![PyPI version](https://img.shields.io/pypi/v/navpipe.svg?color=blue)](https://pypi.org/project/navpipe/)
+[![Python versions](https://img.shields.io/pypi/pyversions/navpipe.svg)](https://pypi.org/project/navpipe/)
+[![Rust](https://img.shields.io/badge/built%20with-Rust-brown.svg?logo=rust)](https://www.rust-lang.org/)
+[![Build Status](https://github.com/MSM2002/NavPipe/actions/workflows/publish.yml/badge.svg)](https://github.com/MSM2002/NavPipe/actions)
+[![License](https://img.shields.io/github/license/MSM2002/NavPipe.svg)](https://github.com/MSM2002/NavPipe/blob/main/LICENSE)
+[![PyPI Downloads](https://img.shields.io/pypi/dm/navpipe.svg?label=downloads&color=orange)](https://pypi.org/project/navpipe/)
+[![GitHub stars](https://img.shields.io/github/stars/MSM2002/navpipe.svg?style=social)](https://github.com/MSM2002/navpipe/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/MSM2002/navpipe.svg?style=social)](https://github.com/MSM2002/navpipe/network/members)
+
+
 **NavPipe** is a high-performance, compiled Python SDK for fetching mutual fund NAV history from the unofficial API at:
 
 👉 https://www.mfapi.in
