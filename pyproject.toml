@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "navpipe"
-version = "0.1.4"
+version = "0.2.0"
 description = "Unofficial Python SDK for fetching mutual fund NAV history from mfapi.in (Rust backend)"
 readme = "docs/README_PyPI.md"
 requires-python = ">=3.9"

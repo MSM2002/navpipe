@@ -1,12 +1,25 @@
 use crate::dataset::nav::{fetch_nav_history_bulk, fetch_nav_history_bulk_eager};
 use crate::schema::nav::DateRange;
-use polars::prelude::*;
-use pyo3::prelude::*;
-use anyhow::Error;
+use std::sync::OnceLock;
+use tokio::runtime::Runtime;
+use pyo3_polars::{PyDataFrame, PyLazyFrame};
+use pyo3::{pyclass, pymethods, PyResult, PyErr}; 
 
-/// Simple sync wrapper
+
+// Define a static accessor for the runtime
+fn runtime() -> &'static Runtime {
+    static RUNTIME: OnceLock<Runtime> = OnceLock::new();
+    RUNTIME.get_or_init(|| {
+        tokio::runtime::Builder::new_multi_thread()
+            .enable_all()
+            .build()
+            .expect("Failed to create Tokio runtime")
+    })
+}
+
+/// Now your wrapper is extremely clean and DRY
 fn run_async<T>(fut: impl std::future::Future<Output = T>) -> T {
-    tokio::runtime::Runtime::new().unwrap().block_on(fut)
+    runtime().block_on(fut)
 }
 
 #[pyclass]
@@ -21,29 +34,46 @@ impl NavPipe {
         Self { max_concurrency }
     }
 
-    /// Fetch NAV as LazyFrame
-    fn fetch_nav_lazy(
+    #[pyo3(signature = (scheme_codes, start_date=None, end_date=None))]
+    fn nav_history_lazy(
         &self,
         scheme_codes: Vec<u32>,
-        date_range: Option<DateRange>,
-    ) -> PyResult<LazyFrame> {
-        Ok(run_async(fetch_nav_history_bulk(
+        start_date: Option<String>, 
+        end_date: Option<String>,   
+    ) -> PyResult<PyLazyFrame> {
+
+        let dr = match (start_date, end_date) {
+            (Some(start), Some(end)) => Some(DateRange { start_date: start, end_date: end }),
+            _ => None,
+        };
+
+        let res = run_async(fetch_nav_history_bulk(
             &scheme_codes,
-            date_range.as_ref(),
+            dr.as_ref(), 
             self.max_concurrency,
-        ))?)
+        )).map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
+        
+        Ok(PyLazyFrame(res))
     }
 
-    /// Fetch NAV as DataFrame (eager)
-    fn fetch_nav_eager(
+    #[pyo3(signature = (scheme_codes, start_date=None, end_date=None))]
+    fn nav_history(
         &self,
         scheme_codes: Vec<u32>,
-        date_range: Option<DateRange>,
-    ) -> PyResult<DataFrame> {
-        Ok(run_async(fetch_nav_history_bulk_eager(
-            &scheme_codes,
-            date_range.as_ref(),
+        start_date: Option<String>,
+        end_date: Option<String>,
+    ) -> PyResult<PyDataFrame> {
+        let dr = match (start_date, end_date) {
+            (Some(start), Some(end)) => Some(DateRange { start_date: start, end_date: end }),
+            _ => None,
+        };
+
+        let res = run_async(fetch_nav_history_bulk_eager(
+            scheme_codes,
+            dr,
             self.max_concurrency,
-        ))?)
+        )).map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
+
+        Ok(PyDataFrame(res))
     }
 }
