@@ -128,6 +128,7 @@ def main():
     print(f"Starting release process for version {new_version}...")
     update_version_files(new_version)
     update_changelog(new_version)
+    make_pypi_readme()
 
     try:
         run(
