@@ -22,7 +22,7 @@ once_cell = "1.19"
 [features]
 default = [ "python",]
 python = [ "pyo3/extension-module",]
-abi3 = [ "pyo3/abi3-py313",]
+abi3 = [ "pyo3/abi3-py310",]
 
 [dependencies.tokio]
 version = "1"
