@@ -23,10 +23,8 @@ jobs:
               3.11
               3.12
               3.13
-              3.14
           - os: ubuntu-24.04-arm
             target: aarch64
-            # We flag this here, but don't map it to env yet
             needs_asm: true
             python-versions: |
               3.8
@@ -35,7 +33,6 @@ jobs:
               3.11
               3.12
               3.13
-              3.14
           - os: windows-latest
             target: x64
             python-versions: |
@@ -45,14 +42,12 @@ jobs:
               3.11
               3.12
               3.13
-              3.14
           - os: windows-11-arm
             target: aarch64
             python-versions: |
               3.11
               3.12
               3.13
-              3.14
           - os: macos-latest
             target: x86_64
             python-versions: |
@@ -62,7 +57,6 @@ jobs:
               3.11
               3.12
               3.13
-              3.14
           - os: macos-latest
             target: aarch64
             python-versions: |
@@ -72,7 +66,6 @@ jobs:
               3.11
               3.12
               3.13
-              3.14
 
     steps:
       - uses: actions/checkout@v4
@@ -80,11 +73,8 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          # Newline-separated string is the most robust format for multiple versions
           python-version: ${{ matrix.python-versions }}
 
-      # FIX: Only inject RING_PREGENERATE_ASM for Linux ARM.
-      # Windows/macOS never see this variable, so ring won't panic.
       - name: Configure Ring for ARM
         if: ${{ matrix.needs_asm }}
         shell: bash
@@ -94,12 +84,14 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.target }}
-          # maturin will find all installed CPython versions and build native wheels
+          # Removed --abi3. Maturin will build native wheels for all versions found.
           args: --release --out dist --find-interpreter
           sccache: "true"
           manylinux: auto
         env:
           RUSTFLAGS: "-C opt-level=3"
+          # The key variable to allow building for newer/unknown Python versions
+          PYO3_USE_ABI3_FORWARD_COMPATIBILITY: "1"
 
       - name: Upload wheels
         uses: actions/upload-artifact@v4
@@ -148,7 +140,6 @@ jobs:
         with:
           body_path: RELEASE_BODY.md
           files: dist/*
-          # This prevents the action from failing if a specific glob doesn't find a file
           fail_on_unmatched_files: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
