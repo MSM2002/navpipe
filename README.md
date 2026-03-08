@@ -1,6 +1,8 @@
 ![NavPipe Logo](assets/navpipe-logo.png)
 
+<!-- PYPI-START -->
 # NavPipe
+<!-- PYPI-END -->
 
 [![PyPI version](https://img.shields.io/pypi/v/navpipe.svg?color=blue)](https://pypi.org/project/navpipe/)
 [![Python versions](https://img.shields.io/pypi/pyversions/navpipe.svg)](https://pypi.org/project/navpipe/)
@@ -11,7 +13,7 @@
 [![GitHub stars](https://img.shields.io/github/stars/MSM2002/navpipe.svg?style=social)](https://github.com/MSM2002/navpipe/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/MSM2002/navpipe.svg?style=social)](https://github.com/MSM2002/navpipe/network/members)
 
-
+<!-- PYPI-START -->
 **NavPipe** is a high-performance, compiled Python SDK for fetching mutual fund NAV history from the unofficial API at:
 
 👉 https://www.mfapi.in
@@ -97,6 +99,7 @@ Eagerly fetches and collects data into a standard Polars DataFrame.
 Returns a Polars LazyFrame. Use this if you are fetching hundreds of schemes and want to apply filters, aggregations, or joins before calling `.collect()`.
 
 ---
+<!-- PYPI-END -->
 
 ## Design Philosophy
 NavPipe aims to:
