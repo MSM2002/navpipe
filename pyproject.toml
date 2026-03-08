@@ -1,5 +1,5 @@
 [build-system]
-requires = ["maturin>=1.2"]
+requires = [ "maturin>=1.2",]
 build-backend = "maturin"
 
 [project]
@@ -8,30 +8,15 @@ version = "0.2.0"
 description = "Unofficial Python SDK for fetching mutual fund NAV history from mfapi.in (Rust backend)"
 readme = "docs/README_PyPI.md"
 requires-python = ">=3.8"
-license = { text = "Apache-2.0" }
-authors = [
-    { name = "Satya M", email = "manaswi.m02@gmail.com" }
-]
-keywords = ["mutual fund", "NAV", "mfapi", "finance", "polars", "asyncio", "rust"]
-classifiers = [
-    "Development Status :: 4 - Beta",
-    "Intended Audience :: Developers",
-    "License :: OSI Approved :: Apache Software License",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
-    "Programming Language :: Python :: 3.14",
-    "Programming Language :: Python :: Implementation :: CPython",
-    "Topic :: Software Development :: Libraries",
-    "Topic :: Office/Business :: Financial",
-]
+keywords = [ "mutual fund", "NAV", "mfapi", "finance", "polars", "asyncio", "rust",]
+classifiers = [ "Development Status :: 4 - Beta", "Intended Audience :: Developers", "License :: OSI Approved :: Apache Software License", "Programming Language :: Python :: 3", "Programming Language :: Python :: 3.8", "Programming Language :: Python :: 3.10", "Programming Language :: Python :: 3.11", "Programming Language :: Python :: 3.12", "Programming Language :: Python :: 3.13", "Programming Language :: Python :: 3.14", "Programming Language :: Python :: Implementation :: CPython", "Topic :: Software Development :: Libraries", "Topic :: Office/Business :: Financial",]
+dependencies = [ "polars>=0.18.0",]
+[[project.authors]]
+name = "Satya M"
+email = "manaswi.m02@gmail.com"
 
-dependencies = [
-    "polars>=0.18.0"
-]
+[project.license]
+text = "Apache-2.0"
 
 [project.urls]
 Homepage = "https://github.com/MSM2002/navpipe"
