@@ -26,6 +26,8 @@ jobs:
               3.14
           - os: ubuntu-24.04-arm
             target: aarch64
+            # This is the ONLY target that needs the special Ring variable
+            pregenerate_asm: "1"
             python-versions: |
               3.8
               3.9
@@ -33,7 +35,7 @@ jobs:
               3.11
               3.12
               3.13
-              3.14
+              3,14
           - os: windows-latest
             target: x64
             python-versions: |
@@ -84,18 +86,13 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.target }}
-          # We removed --abi3. Maturin will now build 100% native wheels
-          # for each interpreter found in the path.
-          args: >
-            --release
-            --out dist
-            --find-interpreter
+          args: --release --out dist --find-interpreter
           sccache: "true"
           manylinux: auto
         env:
           RUSTFLAGS: "-C opt-level=3"
-          # Disable this on Win/Mac to avoid the "AlreadyExists" ring panic
-          RING_PREGENERATE_ASM: ${{ matrix.os == 'ubuntu-24.04-arm' && '1' || '0' }}
+          # Only sets the variable if 'pregenerate_asm' is defined in the matrix
+          RING_PREGENERATE_ASM: ${{ matrix.pregenerate_asm }}
 
       - name: Upload wheels
         uses: actions/upload-artifact@v4
