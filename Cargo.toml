@@ -33,11 +33,11 @@ version = "1"
 features = [ "derive",]
 
 [dependencies.polars]
-version = "0.46"
+version = "0.45"
 features = [ "lazy", "temporal", "diagonal_concat",]
 
 [dependencies.pyo3-polars]
-version = "0.20"
+version = "0.19"
 features = [ "derive", "lazy",]
 
 [dependencies.reqwest]
@@ -46,7 +46,7 @@ default-features = false
 features = [ "json", "rustls-tls",]
 
 [dependencies.pyo3]
-version = "0.23"
+version = "0.22"
 
 [package.metadata.maturin]
 name = "navpipe"
