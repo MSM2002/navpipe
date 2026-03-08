@@ -85,6 +85,15 @@ and this project adheres to Semantic Versioning.
 
 ## [0.2.0] - 2026-03-08
 ### Added
+- 
+### Changed
+- 
+### Fixed
+- 
+---
+
+## [0.2.0] - 2026-03-08
+### Added
 - `nav_history_lazy()` to return results into a `pl.LazyFrame`.
 - Python type stubs for the public API.
 ### Changed
