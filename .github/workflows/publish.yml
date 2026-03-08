@@ -16,22 +16,22 @@ jobs:
         include:
           - os: ubuntu-latest
             target: x86_64
-            python-versions: "3.8\n3.9\n3.10\n3.11\n3.12\n3.13"
+            python-versions: "3.8,3.9,3.10,3.11,3.12,3.13,3.14"
           - os: ubuntu-24.04-arm
             target: aarch64
-            python-versions: "3.8\n3.9\n3.10\n3.11\n3.12\n3.13"
+            python-versions: "3.8,3.9,3.10,3.11,3.12,3.13,3.14"
           - os: windows-latest
             target: x64
-            python-versions: "3.8\n3.9\n3.10\n3.11\n3.12\n3.13"
+            python-versions: "3.8,3.9,3.10,3.11,3.12,3.13,3.14"
           - os: windows-11-arm
             target: aarch64
-            python-versions: "3.11\n3.12\n3.13"
+            python-versions: "3.11,3.12,3.13,3.14"
           - os: macos-latest
             target: x86_64
-            python-versions: "3.8\n3.9\n3.10\n3.11\n3.12\n3.13"
+            python-versions: "3.8,3.9,3.10,3.11,3.12,3.13,3.14"
           - os: macos-latest
             target: aarch64
-            python-versions: "3.8\n3.9\n3.10\n3.11\n3.12\n3.13"
+            python-versions: "3.8,3.9,3.10,3.11,3.12,3.13,3.14"
 
     steps:
       - uses: actions/checkout@v4
@@ -45,22 +45,18 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.target }}
-          # FIX: --abi3 is now the VERY FIRST argument.
-          # No '--' separator is used so maturin handles it.
+          # We removed --abi3. Maturin will now build 100% native wheels
+          # for each interpreter found in the path.
           args: >
-            --abi3
             --release
             --out dist
             --find-interpreter
-            --interpreter ${{ matrix.os == 'windows-11-arm' && 'python3.11 python3.12 python3.13' || 'python3.8 python3.9 python3.10 python3.11 python3.12 python3.13' }}
           sccache: "true"
           manylinux: auto
         env:
           RUSTFLAGS: "-C opt-level=3"
-          # FIX: Only pregenerate ASM on Linux ARM to stop the Windows/Mac 'ring' panic
+          # Disable this on Win/Mac to avoid the "AlreadyExists" ring panic
           RING_PREGENERATE_ASM: ${{ matrix.os == 'ubuntu-24.04-arm' && '1' || '0' }}
-          MATURIN_FEATURES: "abi3"
-          PYO3_USE_ABI3_FORWARD_COMPATIBILITY: "1"
 
       - name: Upload wheels
         uses: actions/upload-artifact@v4
@@ -92,7 +88,6 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
@@ -101,7 +96,6 @@ jobs:
           path: dist
 
       - name: Extract Release Notes
-        id: extract_notes
         run: |
           VERSION="${{ github.ref_name }}"
           sed -n "/## \[$VERSION\]/,/---/p" CHANGELOG.md | sed '1d;$d' > RELEASE_BODY.md
@@ -111,9 +105,7 @@ jobs:
         with:
           body_path: RELEASE_BODY.md
           files: dist/*
-          fail_on_unmatched_files: true
         env:
-          # Note: Using standard GITHUB_TOKEN as it has permission 'contents: write'
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish to PyPI
