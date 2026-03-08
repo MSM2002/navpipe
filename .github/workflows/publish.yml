@@ -84,13 +84,16 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.target }}
-          # Removed --abi3. Maturin will build native wheels for all versions found.
-          args: --release --out dist --find-interpreter
+          # Explicitly calling out python3.x prevents Maturin from picking up PyPy
+          args: >
+            --release
+            --out dist
+            --find-interpreter
+            --interpreter ${{ matrix.python-versions }}
           sccache: "true"
           manylinux: auto
         env:
           RUSTFLAGS: "-C opt-level=3"
-          # The key variable to allow building for newer/unknown Python versions
           PYO3_USE_ABI3_FORWARD_COMPATIBILITY: "1"
 
       - name: Upload wheels
