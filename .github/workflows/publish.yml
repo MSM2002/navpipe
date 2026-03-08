@@ -4,7 +4,7 @@ on:
   push:
     tags:
       - "[0-9]+.[0-9]+.[0-9]+"
-  workflow_dispatch: # Allows manual testing from the Actions tab
+  workflow_dispatch:
 
 jobs:
   build_wheels:
@@ -14,18 +14,22 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Linux 64-bit (Standard)
+          # Linux x86_64
           - os: ubuntu-latest
             target: x86_64
-          # Linux ARM (Using Native ARM runner to avoid QEMU/Ring errors)
+          # Linux ARM64 (Native Runner)
           - os: ubuntu-24.04-arm
             target: aarch64
-          # Windows 64-bit
+          # Windows x64
           - os: windows-latest
             target: x64
-          # macOS (Intel & Apple Silicon)
+          # Windows ARM64 (Native Runner - Added 2026)
+          - os: windows-11-arm
+            target: aarch64
+          # macOS Intel
           - os: macos-latest
             target: x86_64
+          # macOS Apple Silicon
           - os: macos-latest
             target: aarch64
 
@@ -35,7 +39,6 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          # We provide versions up to 3.13 for optimized native builds
           python-version: |
             3.8
             3.9
@@ -48,19 +51,19 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.target }}
-          # Logic: Build optimized wheels for 3.8-3.13.
-          # The --compatibility abi3 ensures a 'cp38-abi3' fallback is created for 3.14+.
+          # Logic: Optimized native wheels for 3.8-3.13.
+          # The --abi3 flag creates the 'cp38-abi3' fallback for 3.14+.
           args: >
             --release
             --out dist
             --find-interpreter
             --interpreter python3.8 python3.9 python3.10 python3.11 python3.12 python3.13
-            --compatibility abi3
+            --abi3
           sccache: "true"
           manylinux: auto
         env:
           RUSTFLAGS: "-C opt-level=3"
-          # Fix for 'ring' crate assembly on ARM/CI
+          # Prevents 'ring' crate assembly errors across all architectures
           RING_PREGENERATE_ASM: "1"
           # Activates the [features] abi3 in your Cargo.toml
           MATURIN_FEATURES: "abi3"
@@ -105,11 +108,10 @@ jobs:
           merge-multiple: true
           path: dist
 
-      - name: Extract Release Notes from CHANGELOG
+      - name: Extract Release Notes
         id: extract_notes
         run: |
           VERSION="${{ github.ref_name }}"
-          # Extracts content between the current version header and the next divider
           sed -n "/## \[$VERSION\]/,/---/p" CHANGELOG.md | sed '1d;$d' > RELEASE_BODY.md
 
       - name: Create GitHub Release
@@ -118,7 +120,7 @@ jobs:
           body_path: RELEASE_BODY.md
           files: dist/*
         env:
-          GITHUB_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
