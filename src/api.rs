@@ -1,10 +1,9 @@
-use crate::dataset::nav::{fetch_nav_history_bulk, fetch_nav_history_bulk_eager};
+use crate::dataset::nav::fetch_nav_history_bulk_eager;
 use crate::schema::nav::DateRange;
+use pyo3::{pyclass, pymethods, PyErr, PyResult};
+use pyo3_polars::PyDataFrame;
 use std::sync::OnceLock;
 use tokio::runtime::Runtime;
-use pyo3_polars::{PyDataFrame, PyLazyFrame};
-use pyo3::{pyclass, pymethods, PyResult, PyErr}; 
-
 
 // Define a static accessor for the runtime
 fn runtime() -> &'static Runtime {
@@ -35,28 +34,6 @@ impl NavPipe {
     }
 
     #[pyo3(signature = (scheme_codes, start_date=None, end_date=None))]
-    fn nav_history_lazy(
-        &self,
-        scheme_codes: Vec<u32>,
-        start_date: Option<String>, 
-        end_date: Option<String>,   
-    ) -> PyResult<PyLazyFrame> {
-
-        let dr = match (start_date, end_date) {
-            (Some(start), Some(end)) => Some(DateRange { start_date: start, end_date: end }),
-            _ => None,
-        };
-
-        let res = run_async(fetch_nav_history_bulk(
-            &scheme_codes,
-            dr.as_ref(), 
-            self.max_concurrency,
-        )).map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
-        
-        Ok(PyLazyFrame(res))
-    }
-
-    #[pyo3(signature = (scheme_codes, start_date=None, end_date=None))]
     fn nav_history(
         &self,
         scheme_codes: Vec<u32>,
@@ -64,7 +41,10 @@ impl NavPipe {
         end_date: Option<String>,
     ) -> PyResult<PyDataFrame> {
         let dr = match (start_date, end_date) {
-            (Some(start), Some(end)) => Some(DateRange { start_date: start, end_date: end }),
+            (Some(start), Some(end)) => Some(DateRange {
+                start_date: start,
+                end_date: end,
+            }),
             _ => None,
         };
 
@@ -72,7 +52,8 @@ impl NavPipe {
             scheme_codes,
             dr,
             self.max_concurrency,
-        )).map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
+        ))
+        .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
 
         Ok(PyDataFrame(res))
     }
