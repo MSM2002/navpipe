@@ -37,14 +37,7 @@ df = client.nav_history(
     end_date="2023-12-31",
 )
 
-# Lazy execution: Returns a polars.LazyFrame for complex pipelines
-lazy_plan = client.nav_history_lazy(
-    scheme_codes=[119551, 120503]
-)
-
-# Chain Polars operations natively
-results = lazy_plan.filter(pl.col("nav") > 50).collect()
-print(results)
+print(df)
 ```
 
 ### Output Schema
@@ -79,9 +72,5 @@ Initializes the engine.
 `nav_history(...) -> pl.DataFrame`
 
 Eagerly fetches and collects data into a standard Polars DataFrame.
-
-`nav_history_lazy(...) -> pl.LazyFrame`
-
-Returns a Polars LazyFrame. Use this if you are fetching hundreds of schemes and want to apply filters, aggregations, or joins before calling `.collect()`.
 
 ---

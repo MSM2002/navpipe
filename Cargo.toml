@@ -1,6 +1,6 @@
 [package]
 name = "navpipe"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 authors = [ "Satya M <manaswi.m02@gmail.com>",]
 description = "Unofficial Python SDK for fetching mutual fund NAV history from mfapi.in (Rust backend)"
@@ -34,7 +34,7 @@ features = [ "derive",]
 
 [dependencies.polars]
 version = "0.53"
-features = [ "lazy", "temporal", "diagonal_concat", "object"]
+features = [ "lazy", "temporal", "diagonal_concat", "object",]
 
 [dependencies.pyo3-polars]
 version = "0.26"
