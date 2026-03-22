@@ -13,10 +13,10 @@ and this project adheres to Semantic Versioning.
 - 
 
 ### Changed
-- 
+- Updated internal rust crates to make the stable ABI build with python 3.13.
 
 ### Fixed
-- 
+- Removed `nav_history_lazy()` method as it will work with polars versions that have polars rust crate version 0.53.0.
 
 ---
 
