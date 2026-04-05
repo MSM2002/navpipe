@@ -1,32 +1,38 @@
+use crate::schema::nav::{DateRange, NavResponse};
 use crate::transform::nav::nav_response_to_df;
 use crate::transport::client::AsyncNavPipeHTTP;
-use polars::prelude::*;
 use futures::future::join_all;
-use tokio::sync::Semaphore;
+use polars::prelude::*;
 use std::sync::Arc;
-use crate::schema::nav::{NavResponse, DateRange}; 
+use tokio::sync::Semaphore;
 
-/// Fetch NAV data concurrently and return a LazyFrame
+/// Fetch NAV data concurrently for an owned list of scheme codes
 pub async fn fetch_nav_history_bulk(
-    scheme_codes: &[u32],
-    date_range: Option<&DateRange>,
+    scheme_codes: Vec<u32>, // Accepts the owned list
+    _date_range: Option<DateRange>,
     max_concurrency: usize,
-) -> Result<LazyFrame, PolarsError> {
+) -> Result<DataFrame, PolarsError> {
+    // We initialize the client once to reuse the connection pool
     let client = AsyncNavPipeHTTP::new();
     let sem = Arc::new(Semaphore::new(max_concurrency));
 
     let tasks: Vec<_> = scheme_codes
-        .iter()
-        .map(|&code| {
+        .into_iter() // Consumes the Vec, turning each u32 into an owned value
+        .map(|code| {
             let client_clone = client.clone();
-            let dr_clone = date_range.cloned();
             let sem_clone = sem.clone();
+
             tokio::spawn(async move {
                 let _permit = sem_clone.acquire().await.unwrap();
-                let resp = client_clone.get_nav::<NavResponse>(code, dr_clone.as_ref())
+
+                // Path construction
+                let path = format!("mf/{}", code);
+
+                let resp: NavResponse = client_clone
+                    .get_path(&path)
                     .await
-                    .map_err(|e: reqwest::Error| PolarsError::ComputeError(e.to_string().into()))?;
-                
+                    .map_err(|e| PolarsError::ComputeError(e.to_string().into()))?;
+
                 nav_response_to_df(&resp)
             })
         })
@@ -34,21 +40,14 @@ pub async fn fetch_nav_history_bulk(
 
     let results = join_all(tasks).await;
     let mut dfs = Vec::with_capacity(results.len());
-    
+
     for res in results {
+        // Handle Task Join Error (Tokio) then the Polars Result
         let df = res.map_err(|e| PolarsError::ComputeError(e.to_string().into()))??;
         dfs.push(df);
     }
 
-    polars::functions::concat_df_diagonal(&dfs).map(|df: polars::frame::DataFrame| df.lazy())
+    // Combine all individual DataFrames into one large one
+    polars::functions::concat_df_diagonal(&dfs)
 }
 
-pub async fn fetch_nav_history_bulk_eager(
-    scheme_codes: Vec<u32>, 
-    date_range: Option<DateRange>, 
-    max_concurrency: usize
-) -> Result<DataFrame, PolarsError> {
-    let lf = fetch_nav_history_bulk(&scheme_codes, date_range.as_ref(), max_concurrency).await?;
-    let df = lf.collect()?;
-    Ok(df)
-}
