@@ -1,4 +1,4 @@
-use crate::dataset::nav::fetch_nav_history_bulk_eager;
+use crate::dataset::nav::fetch_nav_history_bulk;
 use crate::schema::nav::DateRange;
 use pyo3::{pyclass, pymethods, PyErr, PyResult};
 use pyo3_polars::PyDataFrame;
@@ -48,7 +48,7 @@ impl NavPipe {
             _ => None,
         };
 
-        let res = run_async(fetch_nav_history_bulk_eager(
+        let res = run_async(fetch_nav_history_bulk(
             scheme_codes,
             dr,
             self.max_concurrency,
