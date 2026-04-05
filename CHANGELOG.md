@@ -13,7 +13,7 @@ and this project adheres to Semantic Versioning.
 - 
 
 ### Changed
-- 
+- Internal changes to help with scaling future features.
 
 ### Fixed
 - 
