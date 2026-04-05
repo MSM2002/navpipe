@@ -13,11 +13,20 @@ and this project adheres to Semantic Versioning.
 - 
 
 ### Changed
-- Internal changes to help with scaling future features.
+- 
 
 ### Fixed
 - 
 
+---
+
+## [0.3.1] - 2026-04-05
+### Added
+- 
+### Changed
+- Internal changes to help with scaling future features.
+### Fixed
+- 
 ---
 
 ## [0.3.0] - 2026-03-22
